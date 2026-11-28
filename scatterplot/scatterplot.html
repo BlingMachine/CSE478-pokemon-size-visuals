@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon Height (m) vs. Weight (kg) Scatterplot</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #991b1b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      line-height: 1.25;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .toggle-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch.small {
+      width: 34px;
+      height: 18px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: 0.2s;
+      border-radius: 999px;
+    }
+
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      transition: 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .switch.small .slider:before {
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    .switch.small input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    #error-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+      font-size: 0.9rem;
+    }
+
+    #type-controls {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin: 12px 0 18px;
+      padding: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    #type-controls.visible {
+      display: flex;
+    }
+
+    .type-controls-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .bulk-actions {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .bulk-btn {
+      padding: 3px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .bulk-btn:hover {
+      background: #f1f5f9;
+    }
+
+    #type-toggles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 8px;
+    }
+
+    .type-toggle-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.15s, border-color 0.15s;
+    }
+
+    .type-toggle-card.active {
+      border-color: #94a3b8;
+    }
+
+    .type-toggle-card.inactive {
+      opacity: 0.55;
+    }
+
+    .type-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .type-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #chart {
+      width: 100%;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .axis-label {
+      font-size: 12px;
+      font-weight: 600;
+      fill: #334155;
+    }
+
+    .grid line {
+      stroke: #e2e8f0;
+      stroke-dasharray: 2, 2;
+    }
+
+    .grid path {
+      stroke-width: 0;
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.94);
+      color: #ffffff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      z-index: 1000;
+      max-width: 240px;
+    }
+
+    .tooltip strong {
+      font-size: 0.95rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Pokémon Height (m) vs. Weight (kg)</h1>
+        <p class="subtitle">X-axis: Weight (kg) &bull; Y-axis: Height (m) (log scale)</p>
+      </div>
+      <label class="toggle-control" for="typeToggle">
+        <span class="switch">
+          <input type="checkbox" id="typeToggle" />
+          <span class="slider"></span>
+        </span>
+        <span>Highlight by Type</span>
+      </label>
+    </div>
+
+    <div id="error-banner"></div>
+
+    <section id="type-controls" aria-label="Individual Pokémon Type Toggles">
+      <div class="type-controls-header">
+        <span>Toggle individual types to highlight (when none are toggled on, all types are highlighted):</span>
+        <div class="bulk-actions">
+          <button type="button" class="bulk-btn" id="selectAllTypesBtn">Select All</button>
+          <button type="button" class="bulk-btn" id="clearAllTypesBtn">Clear All</button>
+        </div>
+      </div>
+      <div id="type-toggles-grid"></div>
+    </section>
+
+    <div id="chart"></div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script src="scatterplot.js"></script>
+</body>
+</html>
