@@ -11,3 +11,4 @@ svg.append("text")
     .attr("text-anchor", "middle")
     .attr("font-size", "24px")
     .text("D3 working");
+3

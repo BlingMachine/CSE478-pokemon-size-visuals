@@ -12,10 +12,21 @@
 
 
 
-    <label for="pokemonSelect">Choose a Pokémon:</label>
-    <select id="pokemonSelect"></select>
 
-    <div id="comparison"></div>
+    <div class="layout">
+
+        <div class="controls">
+            <label for="pokemonSearch">Search Pokémon:</label>
+            <input type="text" id="pokemonSearch" placeholder="Enter Pokémon name...">
+
+            <label for="pokemonSelect">Choose a Pokémon:</label>
+            <select id="pokemonSelect" size="20"></select>
+        </div>
+
+        <div id="comparison"></div>
+
+    </div>
+
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="comparison.js"></script>

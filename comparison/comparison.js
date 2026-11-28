@@ -2,6 +2,7 @@
 
 const comparison = d3.select("#comparison");
 const pokemonSelect = d3.select("#pokemonSelect");
+const pokemonSearch = d3.select("#pokemonSearch");
 
 // load pokemon dataset
 d3.csv("../scatterplot/metadata_pokemon.csv").then(data => {
@@ -18,55 +19,88 @@ d3.csv("../scatterplot/metadata_pokemon.csv").then(data => {
     pokemon.sort((a, b) => a.id - b.id);
 
     // add pokemon to dropdown
-    pokemonSelect.selectAll("option")
-        .data(pokemon)
-        .enter()
-        .append("option")
-        .attr("value", d => d.id)
-        .text(d => `#${d.id} ${d.name}`);
+    // update dropdown based on search
+    function updateDropdown(search = "") {
 
-    // update comparison when selection changes
-    pokemonSelect.on("change", function() {
-        const selected = pokemon.find(d => d.id === +this.value);
-        if (selected) {
-            displayComparison(selected);
-        }
-    });
+        const filtered = pokemon.filter(d =>
+            d.name.toLowerCase().startsWith(search.toLowerCase())
+        );
 
-    // display pikachu by default
-    const pikachu = pokemon.find(d => d.id === 25);
-    const initialPokemon = pikachu || pokemon[0];
-
-    if (initialPokemon) {
-        pokemonSelect.property("value", initialPokemon.id);
-        displayComparison(initialPokemon);
+        pokemonSelect.selectAll("option")
+            .data(filtered, d => d.id)
+            .join("option")
+            .attr("value", d => d.id)
+            .text(d => `#${d.id} ${d.name}`);
     }
 
+    // show all pokemon initially
+    updateDropdown();
+
+    // filter dropdown as user types
+    pokemonSearch.on("input", function() {
+        updateDropdown(this.value.trim());
+    });
+
+
+        // update comparison when selection changes
+        pokemonSelect.on("change", function() {
+            const selected = pokemon.find(d => d.id === +this.value);
+            if (selected) {
+                displayComparison(selected);
+            }
+        });
+
+        // display pikachu by default
+        const pikachu = pokemon.find(d => d.id === 25);
+        const initialPokemon = pikachu || pokemon[0];
+
+        if (initialPokemon) {
+            pokemonSelect.property("value", initialPokemon.id);
+            displayComparison(initialPokemon);
+        }
+
 }).catch(error => {
-    console.error("Error loading Pokemon dataset:", error);
+console.error("Error loading Pokemon dataset:", error);
 });
+
 
 function displayComparison(pokemon) {
 
-
     const humanHeight = 1.75;
-
-    // adjust scale to fit the tallest object
     const maxHeight = 450;
+
+    // adjust scale based on the tallest object
     const scale = Math.min(200, maxHeight / Math.max(pokemon.height, humanHeight));
 
-    // clear previous comparison
     comparison.selectAll("*").remove();
+
+    // create dynamic y axis
+    const axisHeight = maxHeight;
+    const axisMax = (axisHeight / scale) * 1.15;
+
+    const yScale = d3.scaleLinear()
+        .domain([0, axisMax])
+        .range([axisHeight, 0]);
+
+    const axisSvg = comparison.append("svg")
+        .attr("id", "height-axis")
+        .attr("width", 65)
+        .attr("height", axisHeight);
+
+    axisSvg.append("g")
+        .attr("transform", "translate(60,0)")
+        .call(d3.axisLeft(yScale).ticks(8));
 
     // pokemon image
     const pokemonDiv = comparison.append("div")
         .attr("class", "item");
 
-    // Pokemon PNG!
+    const pokemonFigure = pokemonDiv.append("div")
+        .attr("class", "figure");
+
     const imageUrl = `images/${pokemon.id}.png`;
 
-
-    pokemonDiv.append("img")
+    pokemonFigure.append("img")
         .attr("src", imageUrl)
         .attr("alt", pokemon.name)
         .style("height", (pokemon.height * scale) + "px")
@@ -77,11 +111,14 @@ function displayComparison(pokemon) {
     pokemonDiv.append("p")
         .text(`${pokemon.name}: ${pokemon.height} m`);
 
-
+    // human comparison
     const humanDiv = comparison.append("div")
         .attr("class", "item");
 
-    const humanSvg = humanDiv.append("svg")
+    const humanFigure = humanDiv.append("div")
+        .attr("class", "figure");
+
+    const humanSvg = humanFigure.append("svg")
         .attr("width", 120)
         .attr("height", humanHeight * scale)
         .attr("viewBox", "0 0 120 350");
