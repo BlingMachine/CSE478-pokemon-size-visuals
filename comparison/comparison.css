@@ -1,0 +1,30 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 40px;
+}
+
+#comparison {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 60px;
+    margin-top: 50px;
+    border-bottom: 2px solid black;
+    padding-bottom: 10px;
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.item img {
+    width: auto;
+    object-fit: contain;
+}
+
+.item p {
+    margin-top: 10px;
+}
